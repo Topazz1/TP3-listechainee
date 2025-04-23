@@ -209,6 +209,17 @@ int main() {
                 // Libération mémoire du nom + de la structure de B
                 free(lexiqueB->nom);
                 free(lexiqueB);
+
+                // Mettre à jour dernierLexique si nécessaire
+                if (dernierLexique == lexiqueB) {
+                    // On doit retrouver le nouveau dernier dans la liste
+                    dernierLexique = listeLexiques;
+                    if (dernierLexique != NULL) {
+                        while (dernierLexique->suivant != NULL) {
+                            dernierLexique = dernierLexique->suivant;
+                        }
+                    }
+                }
             
                 printf("(!) Fusion terminée. Le lexique a été intégré et l'ancien supprimé.\n");
                 break;
