@@ -176,8 +176,53 @@ void afficherMots(t_mot* liste) {
 
 
 // Fusion listes
-t_mot *fusionner(t_mot *listeA, t_mot *listeB){
-    return NULL; // à remplacer par le code la fonction
+t_mot* fusionner(t_mot* listeA, t_mot* listeB) {
+    t_mot* result = NULL;
+    t_mot* *lastPtr = &result;
+
+    while (listeA != NULL && listeB != NULL) {
+        int cmp = strcmp(listeA->mot, listeB->mot);
+
+        if (cmp == 0) {
+            // Mot en commun → fusionner les occurrences
+            listeA->nombre_occurences += listeB->nombre_occurences;
+
+            // Ajouter A à la nouvelle liste
+            *lastPtr = listeA;
+            lastPtr = &((*lastPtr)->suivant);
+
+            // Avancer A et libérer B
+            t_mot* tmpB = listeB;
+            listeA = listeA->suivant;
+            listeB = listeB->suivant;
+            free(tmpB->mot);
+            free(tmpB);
+        }
+        else if (cmp < 0) {
+            // Mot de A vient avant → on le garde
+            *lastPtr = listeA;
+            lastPtr = &((*lastPtr)->suivant);
+            listeA = listeA->suivant;
+        }
+        else {
+            // Mot de B vient avant → on l'insère
+            t_mot* suivantB = listeB->suivant;
+
+            *lastPtr = listeB;
+            lastPtr = &((*lastPtr)->suivant);
+
+            listeB = suivantB;
+        }
+    }
+
+    // Ajouter le reste de A ou de B
+    if (listeA != NULL) {
+        *lastPtr = listeA;
+    } else {
+        *lastPtr = listeB;
+    }
+
+    return result;
 }
 /* ====== FIN fusionner ====== */
 
@@ -294,3 +339,27 @@ void viderBuffer() {
     int c = '0';
     while (c!='\n' && c != EOF) { c = getchar(); }
 }
+
+//fonction pour libérer la mémoire d'un lexique
+void libererLexiques(t_lexique* liste) {
+    while (liste != NULL) {
+        // Libérer tous les mots du lexique
+        t_mot* courantMot = liste->mots;
+        while (courantMot != NULL) {
+            t_mot* tmpMot = courantMot;
+            courantMot = courantMot->suivant;
+
+            free(tmpMot->mot);    // libérer la chaîne
+            free(tmpMot);         // libérer la structure
+        }
+
+        // Libérer le nom du lexique
+        free(liste->nom);
+
+        // Passer au lexique suivant
+        t_lexique* tmpLexique = liste;
+        liste = liste->suivant;
+        free(tmpLexique);
+    }
+}
+/* ====== FIN libererLexiques ====== */

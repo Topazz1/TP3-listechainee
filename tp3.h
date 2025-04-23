@@ -37,6 +37,7 @@ void afficherLexiques(t_lexique *liste);
 
 void mettreEnMinuscules(char* mot);
 
+void libererLexiques(t_lexique* liste);
 
 // fonction utile pour vider le tampon clavier
 void viderBuffer() ;
