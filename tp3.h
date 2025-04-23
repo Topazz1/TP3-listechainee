@@ -6,10 +6,17 @@ struct s_mot {
     int nombre_occurences;
     struct mot* suivant;
 };
-
 typedef struct s_mot t_mot;
 
+//Création d'une structure lexique pour permettre de gérer plusieurs lexiques
+struct s_lexique {
+    char* nom;
+    t_mot* mots;
+    struct s_lexique* suivant;
+};
+typedef struct s_lexique t_lexique;
 
+//Défintion des fonctions
 t_mot *creerMot(char *mot);
 
 t_mot *ajouterMot(t_mot *liste, char *mot);
