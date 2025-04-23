@@ -14,6 +14,11 @@ t_mot* creerMot(char* mot) {
     }
 
     // Allocation et copie du mot
+    if (mot == NULL) {
+        printf("Erreur : le mot fourni est NULL.\n");
+        free(nouveau);
+        exit(EXIT_FAILURE);
+    }
     nouveau->mot = (char*)malloc((strlen(mot) + 1) * sizeof(char)); // +1 pour le caractère nul \n
     if (nouveau->mot == NULL) {
         printf("Erreur d'allocation mémoire pour le contenu du mot.\n");
@@ -141,31 +146,31 @@ t_mot* retirerMot(t_mot* liste, char* mot) {
 
 
 // Affichage mots d'un lexique
-void afficherMots(t_mot *liste){
-    char i = 'a'; // initialiser le compteur i pour parcourir les lettres de l'alphabet
-    t_mot *j = liste; // pointeur pour parcourir la liste de mots
-    int debut = 1; // pour vérifier si un mot a déjà été affiché pour la lettre en cours
-
-    // Parcours de la liste
-    while (j != NULL) {
-        // On vérifie si la première lettre du mot correspond à la lettre en cours
-        if (j->mot[0] == i) {
-            // Si c'est la première fois qu'on rencontre cette lettre, on affiche la lettre
-            if (debut) {
-                printf("%c --- %s [%d]\n", toupper(i), j->mot, j->nombre_occurences);
-                debut = 0; // on a déjà affiché un mot pour cette lettre
-            } else {
-                // Sinon, on affiche simplement le mot
-                printf("  --- %s [%d]\n", j->mot, j->nombre_occurences);
-            }
-        }
-        // Si le mot ne commence pas par la lettre courante, on passe à la lettre suivante
-        if (j->mot[0] > i) {
-            i++; // on passe à la lettre suivante
-            debut = 1; // on réinitialise le début pour la nouvelle lettre
-        }
-        j = j->suivant; // on passe au mot suivant dans la liste
+void afficherMots(t_mot* liste) {
+    if (liste == NULL) {
+        printf("(Lexique vide)\n");
+        return;
     }
+
+    char derniereLettre = '\0'; // Pour suivre la dernière lettre affichée
+    t_mot* courant = liste;
+
+    while (courant != NULL) {
+        char premiereLettre = tolower(courant->mot[0]); // On récupère la première lettre en minuscule
+
+        if (premiereLettre != derniereLettre) {
+            // Nouvelle lettre rencontrée
+            printf("\n%c --- %s [%d]\n", toupper(premiereLettre), courant->mot, courant->nombre_occurences);
+            derniereLettre = premiereLettre;
+        } else {
+            // Même lettre que précédemment
+            printf("      %s [%d]\n", courant->mot, courant->nombre_occurences);
+        }
+
+        courant = courant->suivant;
+    }
+
+    printf("\n"); // Pour une jolie fin de liste
 }
 /* ====== FIN afficherMots ====== */
 
@@ -183,13 +188,13 @@ t_mot *fusionner(t_mot *listeA, t_mot *listeB){
 #define TAILLE_LIGNE 100
 
 t_mot* importerFichier(t_mot* liste) {
-    char nom_base[TAILLE_NOM_FICHIER];
-    char nom_fichier[TAILLE_NOM_FICHIER + 5]; // 4 pour ".txt" + 1 pour '\0'
+    char nom_base[100];
+    char nom_fichier[105]; // 100 + ".txt" + \0
 
     printf("Entrez le nom du fichier (sans extension) : ");
-    scanf("%s", nom_base);
+    fgets(nom_base, sizeof(nom_base), stdin);
+    nom_base[strcspn(nom_base, "\r\n")] = '\0'; // Nettoyage du \n
 
-    // On construit le nom complet
     snprintf(nom_fichier, sizeof(nom_fichier), "%s.txt", nom_base);
 
     FILE* fichier = fopen(nom_fichier, "r");
@@ -198,10 +203,10 @@ t_mot* importerFichier(t_mot* liste) {
         return liste;
     }
 
-    char ligne[TAILLE_LIGNE];
+    char ligne[100];
 
     while (fgets(ligne, sizeof(ligne), fichier)) {
-        // Nettoyer \n ou \r éventuels
+        // Nettoyer \n
         ligne[strcspn(ligne, "\r\n")] = '\0';
 
         if (strlen(ligne) > 0) {
@@ -214,6 +219,72 @@ t_mot* importerFichier(t_mot* liste) {
     return liste;
 }
 /* ====== FIN importerFichier ====== */
+
+
+/* ====== Gestion des lexiques ====== */
+
+// Fonctions de gestion des lexiques multiples
+t_lexique* creerLexique(char* nom) {
+    t_lexique* nouveau = (t_lexique*)malloc(sizeof(t_lexique));
+    if (nouveau == NULL) {
+        printf("Erreur d'allocation mémoire pour un lexique.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocation et copie du nom
+    nouveau->nom = (char*)malloc((strlen(nom) + 1) * sizeof(char)); // +1 pour le caractère nul \n
+    if (nouveau->nom == NULL) {
+        printf("Erreur d'allocation mémoire pour le nom du lexique.\n");
+        free(nouveau);
+        exit(EXIT_FAILURE);
+    }
+    strcpy(nouveau->nom, nom);
+
+    // Initialisation du reste
+    nouveau->mots = NULL;
+    nouveau->suivant = NULL;
+
+    return nouveau;
+}
+/* ====== FIN creerLexique ====== */
+
+// Fonction pour afficher les lexiques chacun attribué à un nombre que l'on peut choisir
+void afficherLexiques(t_lexique* liste) {
+    int i = 1;
+    while (liste != NULL) {
+        printf("%d. %s\n", i, liste->nom);
+        liste = liste->suivant;
+        i++;
+    }
+}
+/* ====== FIN afficherLexiques ====== */
+
+//Fonction pour choisir un lexique
+t_lexique* choisirLexique(t_lexique* liste) {
+    int choix;
+    afficherLexiques(liste);
+    printf("Choisissez un lexique (0 pour quitter) : ");
+    scanf("%d", &choix);
+    viderBuffer();
+
+    if (choix == 0) {
+        return NULL; // Quitter
+    }
+
+    // Parcourir la liste pour trouver le lexique choisi
+    t_lexique* courant = liste;
+    for (int i = 1; i < choix && courant != NULL; i++) {
+        courant = courant->suivant;
+    }
+
+    if (courant == NULL) {
+        printf("Choix invalide.\n");
+        return NULL;
+    }
+
+    return courant;
+}
+/* ====== FIN choisirLexique ====== */
 
 
 
